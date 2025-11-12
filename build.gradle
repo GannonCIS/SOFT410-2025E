@@ -1,0 +1,66 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.cbozan'
+version = '1.0.0'
+
+java {
+    // Use Java compilation compatibility settings. We rely on the system JDK
+    // (set JAVA_HOME if you want a specific JDK) rather than toolchain downloads.
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // H2 embedded database (works without installation)
+    implementation 'com.h2database:h2:2.2.224'
+    // Keep PostgreSQL driver for future use
+    implementation 'org.postgresql:postgresql:42.7.4'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
+}
+
+application {
+    // Desktop/Swing entry point
+    mainClass = 'com.cbozan.main.Main'
+    // Reduce memory for systems with limited RAM
+    applicationDefaultJvmArgs = ['-Xmx512m', '-Xms256m']
+}
+
+sourceSets {
+    main {
+        java {
+            // Use existing Eclipse layout
+            srcDirs = ['src']
+        }
+        resources {
+            // If you keep .properties/.xml/etc alongside sources, include them as resources
+            srcDirs = ['src']
+            include '**/*.properties', '**/*.xml'
+            exclude '**/*.java', '**/*.class'
+        }
+    }
+    // No tests in this project currently
+    test {
+        java.setSrcDirs([])
+        resources.setSrcDirs([])
+    }
+}
+
+// Consistent encoding
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+// Make the fat jar runnable by double-click/`java -jar`
+tasks.jar {
+    manifest {
+        attributes('Main-Class': application.mainClass.get())
+    }
+}

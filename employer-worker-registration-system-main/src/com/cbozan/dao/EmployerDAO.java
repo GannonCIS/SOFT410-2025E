@@ -76,10 +76,22 @@ public class EmployerDAO {
 				builder.setFname(rs.getString("fname"));
 				builder.setLname(rs.getString("lname"));
 				
-				if(rs.getArray("tel") == null)
+				// Handle tel field - could be array (PostgreSQL) or comma-separated string (H2)
+				String telString = rs.getString("tel");
+				if(telString == null || telString.trim().isEmpty()) {
 					builder.setTel(null);
-				else
-					builder.setTel(Arrays.asList((String [])rs.getArray("tel").getArray()));
+				} else {
+					// Split by comma and trim whitespace
+					String[] telArray = telString.split(",");
+					List<String> telList = new ArrayList<>();
+					for(String tel : telArray) {
+						String trimmed = tel.trim();
+						if(!trimmed.isEmpty()) {
+							telList.add(trimmed);
+						}
+					}
+					builder.setTel(telList);
+				}
 				
 				builder.setDescription(rs.getString("description"));
 				builder.setDate(rs.getTimestamp("date"));
@@ -122,9 +134,14 @@ public class EmployerDAO {
 			pst.setString(1, employer.getFname());
 			pst.setString(2, employer.getLname());
 			
-			if(employer.getTel() == null)
-				pst.setArray(3, null);
-			else {
+			// Handle tel field for both PostgreSQL (array) and H2 (string)
+			if(employer.getTel() == null || employer.getTel().isEmpty()) {
+				pst.setString(3, null);
+			} else if(DB.isUsingH2()) {
+				// H2: store as comma-separated string
+				pst.setString(3, String.join(",", employer.getTel()));
+			} else {
+				// PostgreSQL: store as array
 				java.sql.Array phones = conn.createArrayOf("VARCHAR", employer.getTel().toArray());
 				pst.setArray(3, phones);
 			}
@@ -143,9 +160,22 @@ public class EmployerDAO {
 					builder.setFname(rs.getString("fname"));
 					builder.setLname(rs.getString("lname"));
 					
-					if(rs.getArray("tel") == null)
+					// Handle tel field - could be array (PostgreSQL) or comma-separated string (H2)
+					String telString = rs.getString("tel");
+					if(telString == null || telString.trim().isEmpty()) {
 						builder.setTel(null);
-					else
+					} else {
+						// Split by comma and trim whitespace
+						String[] telArray = telString.split(",");
+						List<String> telList = new ArrayList<>();
+						for(String tel : telArray) {
+							String trimmed = tel.trim();
+							if(!trimmed.isEmpty()) {
+								telList.add(trimmed);
+							}
+						}
+						builder.setTel(telList);
+					}
 						builder.setTel(Arrays.asList((String [])rs.getArray("tel").getArray()));
 					
 					builder.setDescription(rs.getString("description"));
@@ -203,8 +233,17 @@ public class EmployerDAO {
 			pst.setString(1, employer.getFname());
 			pst.setString(2, employer.getLname());
 			
-			Array phones = conn.createArrayOf("VARCHAR", employer.getTel().toArray());
-			pst.setArray(3, phones);
+			// Handle tel field for both PostgreSQL (array) and H2 (string)
+			if(employer.getTel() == null || employer.getTel().isEmpty()) {
+				pst.setString(3, null);
+			} else if(DB.isUsingH2()) {
+				// H2: store as comma-separated string
+				pst.setString(3, String.join(",", employer.getTel()));
+			} else {
+				// PostgreSQL: store as array
+				Array phones = conn.createArrayOf("VARCHAR", employer.getTel().toArray());
+				pst.setArray(3, phones);
+			}
 			
 			pst.setString(4, employer.getDescription());
 			pst.setInt(5, employer.getId());

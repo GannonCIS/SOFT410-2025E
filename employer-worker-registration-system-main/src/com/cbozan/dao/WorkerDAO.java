@@ -80,10 +80,22 @@ public class WorkerDAO {
 				builder.setFname(rs.getString("fname"));
 				builder.setLname(rs.getString("lname"));
 				
-				if(rs.getArray("tel") == null)
+				// Handle tel field - could be array (PostgreSQL) or comma-separated string (H2)
+				String telString = rs.getString("tel");
+				if(telString == null || telString.trim().isEmpty()) {
 					builder.setTel(null);
-				else
-					builder.setTel(Arrays.asList((String [])rs.getArray("tel").getArray()));
+				} else {
+					// Split by comma and trim whitespace
+					String[] telArray = telString.split(",");
+					List<String> telList = new ArrayList<>();
+					for(String tel : telArray) {
+						String trimmed = tel.trim();
+						if(!trimmed.isEmpty()) {
+							telList.add(trimmed);
+						}
+					}
+					builder.setTel(telList);
+				}
 				
 				builder.setIban(rs.getString("iban"));
 				builder.setDescription(rs.getString("description"));
@@ -125,9 +137,14 @@ public class WorkerDAO {
 			pst.setString(1, worker.getFname());
 			pst.setString(2, worker.getLname());
 			
-			if(worker.getTel() == null)
-				pst.setArray(3, null);
-			else {
+			// Handle tel field for both PostgreSQL (array) and H2 (string)
+			if(worker.getTel() == null || worker.getTel().isEmpty()) {
+				pst.setString(3, null);
+			} else if(DB.isUsingH2()) {
+				// H2: store as comma-separated string
+				pst.setString(3, String.join(",", worker.getTel()));
+			} else {
+				// PostgreSQL: store as array
 				java.sql.Array phones = conn.createArrayOf("VARCHAR", worker.getTel().toArray());
 				pst.setArray(3, phones);
 			}
@@ -200,8 +217,17 @@ public class WorkerDAO {
 			pst.setString(1, worker.getFname());
 			pst.setString(2, worker.getLname());
 			
-			java.sql.Array phones = conn.createArrayOf("VARCHAR", worker.getTel().toArray());
-			pst.setArray(3, phones);
+			// Handle tel field for both PostgreSQL (array) and H2 (string)
+			if(worker.getTel() == null || worker.getTel().isEmpty()) {
+				pst.setString(3, null);
+			} else if(DB.isUsingH2()) {
+				// H2: store as comma-separated string
+				pst.setString(3, String.join(",", worker.getTel()));
+			} else {
+				// PostgreSQL: store as array
+				java.sql.Array phones = conn.createArrayOf("VARCHAR", worker.getTel().toArray());
+				pst.setArray(3, phones);
+			}
 			
 			pst.setString(4, worker.getIban());
 			pst.setString(5, worker.getDescription());

@@ -66,8 +66,12 @@ public class WorkDAO {
 				String date2 = new SimpleDateFormat(dbDatePattern).format(d1);
 				query = "SELECT * FROM work WHERE worker_id=" + worker.getId() + " AND date >= '" + date1 + "' AND date <= '" + date2 + "';";
 			} catch (ParseException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				// Date parsing failed — inform the user and return empty result
+				JOptionPane.showMessageDialog(null,
+					"Invalid date format: " + e.getMessage(),
+					"Date parse error",
+					JOptionPane.ERROR_MESSAGE);
+				return workList;
 			}
 			
 			
@@ -82,8 +86,12 @@ public class WorkDAO {
 				 String date2 = new SimpleDateFormat(dbDatePattern).format(d1);
 				 query = "SELECT * FROM work WHERE worker_id=" + worker.getId() + " AND date >= '" + date1 + "' AND date <= '" + date2 + "';";
 			} catch (ParseException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				// Date parsing failed — inform the user and return empty result
+				JOptionPane.showMessageDialog(null,
+					"Invalid date format: " + e.getMessage(),
+					"Date parse error",
+					JOptionPane.ERROR_MESSAGE);
+				return workList;
 			}
 		} else {
 			//query = "SELECT * FROM work WHERE worker_id=" + worker.getId();
@@ -132,7 +140,7 @@ public class WorkDAO {
 			}
 			
 		} catch(SQLException sqle) {
-			
+			showSQLException(sqle);
 		}
 		
 		return workList;

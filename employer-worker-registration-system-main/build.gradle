@@ -1,0 +1,77 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.cbozan'
+version = '1.0-SNAPSHOT'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Optional: PostgreSQL driver at runtime. Remove or change version if you don't need DB access.
+    runtimeOnly 'org.postgresql:postgresql:42.6.0'
+    
+    // JUnit 5 for testing
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
+}
+
+application {
+    // Main class of the application
+    // Use provider API for modern Gradle versions
+    // Keep compatibility with older Gradle by setting property if available
+    try {
+        mainClass.set('com.cbozan.main.Main')
+    } catch(Exception e) {
+        // fallback for very old Gradle versions
+        mainClass = 'com.cbozan.main.Main'
+    }
+}
+
+// Project sources are in 'src' (package roots under src/com/...).
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src']
+        }
+        resources {
+            // include resources from top-level src but exclude Java source files
+            srcDirs = ['src']
+            exclude '**/*.java'
+            include 'icon/**'
+        }
+    }
+}
+
+jar {
+    manifest {
+        attributes('Main-Class': 'com.cbozan.main.Main')
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+test {
+    useJUnitPlatform()
+}
+
+// Ensure source encoding and sensible compile options
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+// Helpful task to print project info
+task printProjectInfo {
+    doLast {
+        println "Group: ${project.group}"
+        println "Version: ${project.version}"
+        println "Main class: com.cbozan.main.Main"
+    }
+}

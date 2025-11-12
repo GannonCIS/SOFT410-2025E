@@ -121,9 +121,9 @@ public final class Employer implements Serializable, Cloneable{
 	}
 
 	public void setFname(String fname) throws EntityException {
-		if(fname.length() == 0 || fname.length() > DBConst.FNAME_LENGTH)
-			throw new EntityException("Employer name empty or too long");
-		this.fname = fname;
+		if(fname == null || fname.trim().length() == 0 || fname.length() > DBConst.FNAME_LENGTH)
+			throw new EntityException("Employer name null, empty or too long (max " + DBConst.FNAME_LENGTH + " chars)");
+		this.fname = fname.trim();
 	}
 
 	public String getLname() {
@@ -131,9 +131,9 @@ public final class Employer implements Serializable, Cloneable{
 	}
 
 	public void setLname(String lname) throws EntityException {
-		if(lname.length() == 0 || lname.length() > DBConst.LNAME_LENGTH)
-			throw new EntityException("Employer last name empty or too long");
-		this.lname = lname;
+		if(lname == null || lname.trim().length() == 0 || lname.length() > DBConst.LNAME_LENGTH)
+			throw new EntityException("Employer last name null, empty or too long (max " + DBConst.LNAME_LENGTH + " chars)");
+		this.lname = lname.trim();
 	}
 
 	public List<String> getTel() {
