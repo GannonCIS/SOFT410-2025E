@@ -210,7 +210,7 @@ public class PricePanel extends JPanel implements Observer, Serializable, Action
 				if(result == 0) {
 					
 					Price.PriceBuilder builder = new Price.PriceBuilder();
-					builder.setId(Integer.MAX_VALUE);
+					// Don't set ID for new records - let the database auto-generate it
 					builder.setFulltime(new BigDecimal(fulltime));
 					builder.setHalftime(new BigDecimal(halftime));
 					builder.setOvertime(new BigDecimal(overtime));
@@ -220,6 +220,8 @@ public class PricePanel extends JPanel implements Observer, Serializable, Action
 						price = builder.build();
 					} catch (EntityException e1) {
 						System.out.println(e1.getMessage());
+						JOptionPane.showMessageDialog(this, "Entity validation error: " + e1.getMessage(), "Validation Error", JOptionPane.ERROR_MESSAGE);
+						return; // Don't proceed if validation fails
 					}
 					
 					if(PriceDAO.getInstance().create(price)) { 

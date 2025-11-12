@@ -98,8 +98,8 @@ public class Price implements Serializable{
 	}
 
 	public void setId(int id) throws EntityException {
-		if(id <= 0)
-			throw new EntityException("Price ID negative or zero");
+		if(id < 0)
+			throw new EntityException("Price ID negative");
 		this.id = id;
 	}
 

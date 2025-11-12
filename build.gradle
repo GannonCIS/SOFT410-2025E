@@ -9,8 +9,8 @@ version = '1.0.0'
 java {
     // Use Java compilation compatibility settings. We rely on the system JDK
     // (set JAVA_HOME if you want a specific JDK) rather than toolchain downloads.
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 
 repositories {
@@ -29,8 +29,11 @@ dependencies {
 application {
     // Desktop/Swing entry point
     mainClass = 'com.cbozan.main.Main'
-    // Reduce memory for systems with limited RAM
-    applicationDefaultJvmArgs = ['-Xmx512m', '-Xms256m']
+    // Optimized JVM args for Java 21 with better memory management and performance
+    applicationDefaultJvmArgs = [
+        '-Xmx512m', 
+        '-Xms256m'
+    ]
 }
 
 sourceSets {
@@ -53,9 +56,11 @@ sourceSets {
     }
 }
 
-// Consistent encoding
+// Consistent encoding and Java 21 compiler options
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+    options.compilerArgs += ['-Xlint:deprecation', '-Xlint:unchecked']
+    options.release = 21
 }
 
 // Make the fat jar runnable by double-click/`java -jar`

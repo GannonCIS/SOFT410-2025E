@@ -6,6 +6,13 @@
             "name": "Main",
             "request": "launch",
             "mainClass": "com.cbozan.main.Main",
+            "projectName": "employer-worker-registration-system-employer-worker-registration-system-main"
+        },
+        {
+            "type": "java",
+            "name": "Main",
+            "request": "launch",
+            "mainClass": "com.cbozan.main.Main",
             "projectName": "src"
         },
         {
