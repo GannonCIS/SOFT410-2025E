@@ -188,6 +188,11 @@ public class MainFrame extends JFrame implements ActionListener{
 		components.add(workerDisplay);
 		components.add(employerDisplay);
 		
+		// Set up observer connections for data refresh
+		employer.subscribe(employerDisplay);
+		worker.subscribe(workerDisplay);
+		job.subscribe(jobDisplay);
+		
 		setContentPane((JPanel) components.get(activePage));
 		
 	}

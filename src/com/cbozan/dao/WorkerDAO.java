@@ -57,15 +57,11 @@ public class WorkerDAO {
 		
 		cache.clear();
 		
-		Connection conn;
-		Statement st;
-		ResultSet rs;
 		String query = "SELECT * FROM worker;";
 		
-		try {
-			conn = DB.getConnection();
-			st = conn.createStatement();
-			rs = st.executeQuery(query);
+		try (Connection conn = DB.getFreshConnection();
+			 Statement st = conn.createStatement();
+			 ResultSet rs = st.executeQuery(query)) {
 			
 			WorkerBuilder builder;
 			Worker worker;
@@ -77,19 +73,19 @@ public class WorkerDAO {
 				builder.setFname(rs.getString("fname"));
 				builder.setLname(rs.getString("lname"));
 				
-				// tel: PostgreSQL uses VARCHAR[] while H2 uses comma-separated VARCHAR
-				if (DB.isUsingH2()) {
-					String telStr = rs.getString("tel");
-					if (telStr == null || telStr.isBlank()) 
-						builder.setTel(null);
-					else 
-						builder.setTel(Arrays.asList(telStr.split("\\s*,\\s*")));
-				} else {
-					java.sql.Array telArr = rs.getArray("tel");
-					if (telArr == null)
-						builder.setTel(null);
-					else
-						builder.setTel(Arrays.asList((String[]) telArr.getArray()));
+				String telStr = rs.getString("tel");
+				if(telStr == null || telStr.trim().isEmpty())
+					builder.setTel(null);
+				else {
+					String[] telArray = telStr.split(",");
+					List<String> telList = new ArrayList<>();
+					for(String tel : telArray) {
+						tel = tel.trim();
+						if(!tel.isEmpty()) {
+							telList.add(tel);
+						}
+					}
+					builder.setTel(telList);
 				}
 				
 				builder.setIban(rs.getString("iban"));
@@ -120,28 +116,20 @@ public class WorkerDAO {
 		if(createControl(worker) == false)
 			return false;
 		
-		Connection conn;
-		PreparedStatement pst;
 		int result = 0;
 		String query = "INSERT INTO worker (fname,lname,tel,iban,description) VALUES (?,?,?,?,?);";
 		String query2 = "SELECT * FROM worker ORDER BY id DESC LIMIT 1;";
 		
-		try {
-			conn = DB.getConnection();
-			pst = conn.prepareStatement(query);
+		try (Connection conn = DB.getFreshConnection();
+			 PreparedStatement pst = conn.prepareStatement(query)) {
 			pst.setString(1, worker.getFname());
 			pst.setString(2, worker.getLname());
 			
-			if (DB.isUsingH2()) {
-				if (worker.getTel() == null) pst.setString(3, null);
-				else pst.setString(3, String.join(",", worker.getTel()));
-			} else {
-				if(worker.getTel() == null)
-					pst.setArray(3, null);
-				else {
-					java.sql.Array phones = conn.createArrayOf("VARCHAR", worker.getTel().toArray(new String[0]));
-					pst.setArray(3, phones);
-				}
+			if(worker.getTel() == null)
+				pst.setString(3, null);
+			else {
+				String telStr = String.join(",", worker.getTel());
+				pst.setString(3, telStr);
 			}
 			
 			pst.setString(4, worker.getIban());
@@ -150,8 +138,9 @@ public class WorkerDAO {
 			
 			if(result != 0) {
 				
-				ResultSet rs = conn.createStatement().executeQuery(query2);
-				while(rs.next()) {
+				try (PreparedStatement selectPst = conn.prepareStatement(query2);
+					 ResultSet rs = selectPst.executeQuery()) {
+					while(rs.next()) {
 					
 					WorkerBuilder builder = new WorkerBuilder();
 					builder = new WorkerBuilder();
@@ -159,32 +148,33 @@ public class WorkerDAO {
 					builder.setFname(rs.getString("fname"));
 					builder.setLname(rs.getString("lname"));
 					
-					// tel: PostgreSQL uses VARCHAR[] while H2 uses comma-separated VARCHAR
-					if (DB.isUsingH2()) {
-						String telStr = rs.getString("tel");
-						if (telStr == null || telStr.isBlank()) 
-							builder.setTel(null);
-						else 
-							builder.setTel(Arrays.asList(telStr.split("\\s*,\\s*")));
-					} else {
-						java.sql.Array telArr = rs.getArray("tel");
-						if (telArr == null)
-							builder.setTel(null);
-						else
-							builder.setTel(Arrays.asList((String[]) telArr.getArray()));
+					String telStr = rs.getString("tel");
+					if(telStr == null || telStr.trim().isEmpty())
+						builder.setTel(null);
+					else {
+						String[] telArray = telStr.split(",");
+						List<String> telList = new ArrayList<>();
+						for(String tel : telArray) {
+							tel = tel.trim();
+							if(!tel.isEmpty()) {
+								telList.add(tel);
+							}
+						}
+						builder.setTel(telList);
 					}
 					
 					builder.setIban(rs.getString("iban"));
 					builder.setDescription(rs.getString("description"));
 					builder.setDate(rs.getTimestamp("date"));
 					
-					try {
-						Worker wor = builder.build();
-						cache.put(wor.getId(), wor);
-					} catch (EntityException e) {
-						showEntityException(e, rs.getString("fname") + " " + rs.getShort("lname"));
+						try {
+							Worker wor = builder.build();
+							cache.put(wor.getId(), wor);
+						} catch (EntityException e) {
+							showEntityException(e, rs.getString("fname") + " " + rs.getShort("lname"));
+						}
+						
 					}
-					
 				}
 				
 			}
@@ -210,28 +200,20 @@ public class WorkerDAO {
 		if(updateControl(worker) == false)
 			return false;
 		
-		Connection conn;
-		PreparedStatement pst;
 		int result = 0;
 		String query = "UPDATE worker SET fname=?,"
 				+ "lname=?, tel=?, iban=?, description=? WHERE id=?;";
 		
-		try {
-			conn = DB.getConnection();
-			pst = conn.prepareStatement(query);
+		try (Connection conn = DB.getFreshConnection();
+			 PreparedStatement pst = conn.prepareStatement(query)) {
 			pst.setString(1, worker.getFname());
 			pst.setString(2, worker.getLname());
 			
-			if (DB.isUsingH2()) {
-				if (worker.getTel() == null) pst.setString(3, null);
-				else pst.setString(3, String.join(",", worker.getTel()));
-			} else {
-				if(worker.getTel() == null)
-					pst.setArray(3, null);
-				else {
-					java.sql.Array phones = conn.createArrayOf("VARCHAR", worker.getTel().toArray(new String[0]));
-					pst.setArray(3, phones);
-				}
+			if(worker.getTel() == null)
+				pst.setString(3, null);
+			else {
+				String telStr = String.join(",", worker.getTel());
+				pst.setString(3, telStr);
 			}
 			
 			pst.setString(4, worker.getIban());
@@ -306,6 +288,14 @@ public class WorkerDAO {
 
 	public void setUsingCache(boolean usingCache) {
 		this.usingCache = usingCache;
+	}
+	
+	// Method to force refresh cache from database
+	public void refreshCache() {
+		cache.clear();
+		usingCache = false;
+		list(); // This will reload from database
+		usingCache = true;
 	}
 	
 	private void showEntityException(EntityException e, String msg) {

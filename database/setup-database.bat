@@ -40,6 +40,10 @@ echo   Host:     %DB_HOST%
 echo   Port:     %DB_PORT%
 echo.
 
+REM Optional: use PGPASSWORD if provided to avoid interactive prompts for superuser
+set "PGPASS_FLAG="
+if not "%PGPASSWORD%"=="" set "PGPASS_FLAG=-w"
+
 REM Ask for PostgreSQL admin password
 echo Enter PostgreSQL superuser (postgres) password when prompted
 echo.
@@ -48,24 +52,24 @@ REM Step 1: Create database and user
 echo Step 1: Creating database and user...
 echo.
 
-psql -U postgres -h %DB_HOST% -p %DB_PORT% -c "DROP DATABASE IF EXISTS \"%DB_NAME%\";" 2>nul
-psql -U postgres -h %DB_HOST% -p %DB_PORT% -c "DROP USER IF EXISTS \"%DB_USER%\";" 2>nul
+psql %PGPASS_FLAG% -U postgres -h %DB_HOST% -p %DB_PORT% -c "DROP DATABASE IF EXISTS \"%DB_NAME%\";" 2>nul
+psql %PGPASS_FLAG% -U postgres -h %DB_HOST% -p %DB_PORT% -c "DROP USER IF EXISTS \"%DB_USER%\";" 2>nul
 
-psql -U postgres -h %DB_HOST% -p %DB_PORT% -c "CREATE USER \"%DB_USER%\" WITH PASSWORD '%DB_PASS%';"
+psql %PGPASS_FLAG% -U postgres -h %DB_HOST% -p %DB_PORT% -c "CREATE USER \"%DB_USER%\" WITH PASSWORD '%DB_PASS%';"
 if %errorlevel% neq 0 (
     echo ERROR: Failed to create user
     pause
     exit /b 1
 )
 
-psql -U postgres -h %DB_HOST% -p %DB_PORT% -c "CREATE DATABASE \"%DB_NAME%\" OWNER \"%DB_USER%\";"
+psql %PGPASS_FLAG% -U postgres -h %DB_HOST% -p %DB_PORT% -c "CREATE DATABASE \"%DB_NAME%\" OWNER \"%DB_USER%\";"
 if %errorlevel% neq 0 (
     echo ERROR: Failed to create database
     pause
     exit /b 1
 )
 
-psql -U postgres -h %DB_HOST% -p %DB_PORT% -c "GRANT ALL PRIVILEGES ON DATABASE \"%DB_NAME%\" TO \"%DB_USER%\";"
+psql %PGPASS_FLAG% -U postgres -h %DB_HOST% -p %DB_PORT% -c "GRANT ALL PRIVILEGES ON DATABASE \"%DB_NAME%\" TO \"%DB_USER%\";"
 
 echo.
 echo Database and user created successfully!
@@ -75,7 +79,9 @@ REM Step 2: Create schema
 echo Step 2: Creating database schema...
 echo.
 
-psql -U "%DB_USER%" -h %DB_HOST% -p %DB_PORT% -d "%DB_NAME%" -f "%~dp0schema.sql"
+REM Use DB user password for following steps to avoid prompts
+set "PGPASSWORD=%DB_PASS%"
+psql -w -U "%DB_USER%" -h %DB_HOST% -p %DB_PORT% -d "%DB_NAME%" -f "%~dp0schema.sql"
 if %errorlevel% neq 0 (
     echo ERROR: Failed to create schema
     pause
@@ -92,7 +98,7 @@ echo.
 
 set /p INSERT_DATA="Do you want to insert sample data? (Y/N): "
 if /i "%INSERT_DATA%"=="Y" (
-    psql -U "%DB_USER%" -h %DB_HOST% -p %DB_PORT% -d "%DB_NAME%" -f "%~dp0sample-data.sql"
+    psql -w -U "%DB_USER%" -h %DB_HOST% -p %DB_PORT% -d "%DB_NAME%" -f "%~dp0sample-data.sql"
     if %errorlevel% neq 0 (
         echo ERROR: Failed to insert sample data
         pause

@@ -312,6 +312,7 @@ public class EmployerDisplay extends JPanel implements Observer{
 
 	@Override
 	public void update() {
+		EmployerDAO.getInstance().refreshCache(); // CRITICAL: Refresh employer cache first!
 		employerSearchBox.setObjectList(EmployerDAO.getInstance().list());
 		selectedEmployer = employerCard.getSelectedEmployer();
 		employerSearchBox.setText(selectedEmployer == null ? "" : selectedEmployer.toString());

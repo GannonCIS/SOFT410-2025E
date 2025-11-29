@@ -2,6 +2,12 @@
     "java.configuration.updateBuildConfiguration": "automatic",
     "java.import.gradle.enabled": true,
     "java.import.gradle.wrapper.enabled": true,
+    "java.test.config": {
+        "vmArgs": [
+            "-DTEST_MODE=true",
+            "-Djava.awt.headless=true"
+        ]
+    },
     "java.project.sourcePaths": [],
     "java.project.outputPath": "bin",
     "java.configuration.runtimes": [
@@ -19,5 +25,6 @@
         "**/.classpath": true,
         "**/.project": true,
         "**/.settings": true
-    }
+    },
+    "git.ignoreLimitWarning": true
 }

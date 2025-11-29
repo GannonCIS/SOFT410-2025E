@@ -189,18 +189,27 @@ public class EmployerPanel extends JPanel implements Observer, ActionListener, S
 		phoneNumber = phoneNumberTextField.getText().replaceAll("\\s+", "");
 		description = ((JTextArea)((JViewport)descriptionScrollPane.getComponent(0)).getComponent(0)).getText().trim().toUpperCase();
 		
-		if( fname.equals("") || lname.equals("") ) {
-			String message = "Name and Surname are required.";
-			JOptionPane.showMessageDialog(this, message, "Validation", JOptionPane.WARNING_MESSAGE);
-			return;
-		}
-		if(!phoneNumber.equals("") && !Control.phoneNumberControl(phoneNumber)) {
-			String message = "Phone number format invalid. You can also leave it empty.";
-			JOptionPane.showMessageDialog(this, message, "Validation", JOptionPane.WARNING_MESSAGE);
-			return;
-		}
+		// Debug validation
+		System.out.println("Validating employer data:");
+		System.out.println("  First name: '" + fname + "' (length: " + fname.length() + "/30, empty: " + fname.equals("") + ")");
+		System.out.println("  Last name: '" + lname + "' (length: " + lname.length() + "/20, empty: " + lname.equals("") + ")");
+		System.out.println("  Phone: '" + phoneNumber + "' (valid: " + Control.phoneNumberControl(phoneNumber) + ")");
 		
-		{
+		if( fname.equals("") || lname.equals("") || fname.length() > 30 || lname.length() > 20 || !Control.phoneNumberControl(phoneNumber) ) {
+			
+			String message = "Validation failed:\n";
+			if (fname.equals("")) message += "- First name is required\n";
+			if (lname.equals("")) message += "- Last name is required\n";
+			if (fname.length() > 30) message += "- First name too long (max 30 characters, you entered " + fname.length() + ")\n";
+			if (lname.length() > 20) message += "- Last name too long (max 20 characters, you entered " + lname.length() + ")\n";
+			if (!Control.phoneNumberControl(phoneNumber)) {
+				message += "- Phone number format incorrect\n";
+				message += "  Valid formats: empty, 05551234567, +905551234567\n";
+				message += "  Your input: '" + phoneNumber + "'";
+			}
+			JOptionPane.showMessageDialog(this, message, "Validation Error", JOptionPane.ERROR_MESSAGE);
+			
+		} else {
 			
 			JTextArea fnameTextArea, lnameTextArea, phoneNumberTextArea, descriptionTextArea; 
 			
@@ -247,9 +256,7 @@ public class EmployerPanel extends JPanel implements Observer, ActionListener, S
 				builder.setFname(fname);
 				builder.setLname(lname);
 				if(!phoneNumberTextField.getText().trim().equals("")) {
-					builder.setTel(Arrays.asList(phoneNumber));
-				} else {
-					builder.setTel(null);
+					builder.setTel(Arrays.asList(new String[] {phoneNumber}));
 				}
 				builder.setDescription(description);
 				
@@ -258,17 +265,22 @@ public class EmployerPanel extends JPanel implements Observer, ActionListener, S
 					employer = builder.build();
 				} catch (EntityException e1) {
 					System.out.println(e1.getMessage());
+					// Show user-friendly error message
+					String errorMsg = "Data validation failed:\n" + e1.getMessage() + "\n\n";
+					errorMsg += "Field limits:\n";
+					errorMsg += "- First name: maximum 30 characters\n";
+					errorMsg += "- Last name: maximum 20 characters\n";
+					errorMsg += "- Phone: Turkish format (05551234567) or empty\n\n";
+					errorMsg += "Please check your input and try again.";
+					JOptionPane.showMessageDialog(this, errorMsg, "Input Validation Error", JOptionPane.ERROR_MESSAGE);
+					return; // Don't proceed with save
 				}
 				
-				if(employer == null) {
-					JOptionPane.showMessageDialog(this, "Invalid data – could not build Employer object.", "Error", JOptionPane.ERROR_MESSAGE);
-					return;
-				}
 				if(EmployerDAO.getInstance().create(employer)) { 
-					JOptionPane.showMessageDialog(this, "Employer saved successfully.");
+					JOptionPane.showMessageDialog(this, "Registration Successful");
 					notifyAllObservers();
 				} else {
-					JOptionPane.showMessageDialog(this, "Employer not saved: " + (com.cbozan.dao.DB.ERROR_MESSAGE==null?"":com.cbozan.dao.DB.ERROR_MESSAGE), "Database", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(this, "Not saved", "DataBase error", JOptionPane.ERROR_MESSAGE);
 				}
 				
 			}

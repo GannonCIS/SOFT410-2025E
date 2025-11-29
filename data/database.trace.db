@@ -1,0 +1,3 @@
+2025-11-28 16:12:39.976030-05:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "EMPLOYER" not found (this database is empty); SQL statement:
+SELECT * FROM employer ORDER BY id DESC LIMIT 10 [42104-224]
