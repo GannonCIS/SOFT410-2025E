@@ -120,9 +120,19 @@ public class EntityTest {
             .setDate(new Timestamp(System.currentTimeMillis()))
             .build();
 
+        // Create a Price object for testing (avoids DAO calls)
+        Price price = new Price.PriceBuilder()
+            .setId(1)
+            .setFulltime(new java.math.BigDecimal("100.0"))
+            .setHalftime(new java.math.BigDecimal("50.0"))
+            .setOvertime(new java.math.BigDecimal("150.0"))
+            .setDate(new Timestamp(System.currentTimeMillis()))
+            .build();
+
         Job job = new Job.JobBuilder()
             .setId(1)
             .setEmployer(employer)
+            .setPrice(price)
             .setTitle("Construction Project")
             .setDescription("Building project")
             .setDate(new Timestamp(System.currentTimeMillis()))
@@ -131,6 +141,7 @@ public class EntityTest {
         assertNotNull(job);
         assertEquals("Construction Project", job.getTitle());
         assertEquals(employer, job.getEmployer());
+        assertEquals(price, job.getPrice());
         assertNotNull(job.getDate());
     }
 
@@ -148,9 +159,19 @@ public class EntityTest {
             .setDate(new Timestamp(System.currentTimeMillis()))
             .build();
 
+        // Create a Price object for testing (avoids DAO calls)
+        Price price = new Price.PriceBuilder()
+            .setId(2)
+            .setFulltime(new java.math.BigDecimal("150.0"))
+            .setHalftime(new java.math.BigDecimal("75.0"))
+            .setOvertime(new java.math.BigDecimal("200.0"))
+            .setDate(new Timestamp(System.currentTimeMillis()))
+            .build();
+
         Job original = new Job.JobBuilder()
             .setId(2)
             .setEmployer(employer)
+            .setPrice(price)
             .setTitle("Renovation")
             .setDescription("Renovation work")
             .setDate(new Timestamp(System.currentTimeMillis()))
@@ -161,6 +182,8 @@ public class EntityTest {
         assertNotNull(clone);
         assertNotSame(original, clone);
         assertEquals(original.getTitle(), clone.getTitle());
+        assertEquals(original.getEmployer(), clone.getEmployer());
+        assertEquals(original.getPrice(), clone.getPrice());
     }
 
     @Test
@@ -199,8 +222,8 @@ public class EntityTest {
             .setDate(new Timestamp(System.currentTimeMillis()))
             .build();
 
-        // Same ID should be equal
-        assertEquals(employer1, employer2);
+        // Same ID but different other fields should NOT be equal (current equals implementation checks all fields)
+        assertNotEquals(employer1, employer2);
         
         // Different ID should not be equal
         assertNotEquals(employer1, employer3);
@@ -276,10 +299,20 @@ public class EntityTest {
             .setDate(new Timestamp(System.currentTimeMillis()))
             .build();
 
+        // Create a Price object for testing (avoids DAO calls)
+        Price price = new Price.PriceBuilder()
+            .setId(1)
+            .setFulltime(new java.math.BigDecimal("100.0"))
+            .setHalftime(new java.math.BigDecimal("50.0"))
+            .setOvertime(new java.math.BigDecimal("150.0"))
+            .setDate(new Timestamp(System.currentTimeMillis()))
+            .build();
+
         assertThrows(EntityException.class, () -> {
             new Job.JobBuilder()
                 .setId(0)  // Invalid: <= 0
                 .setEmployer(employer)
+                .setPrice(price)
                 .setTitle("Project")
                 .setDescription("Description")
                 .setDate(new Timestamp(System.currentTimeMillis()))

@@ -302,12 +302,26 @@ public class EmployerDAO {
 	private void showEntityException(EntityException e, String msg) {
 		String message = msg + " not added" + 
 				"\n" + e.getMessage() + "\n" + e.getLocalizedMessage() + e.getCause();
+		
+		// Check if running in headless mode (CI/testing environment)
+		if (System.getProperty("java.awt.headless", "false").equals("true") || 
+			System.getProperty("TEST_MODE", "false").equals("true")) {
+			System.err.println("EntityException: " + message);
+		} else {
 			JOptionPane.showMessageDialog(null, message);
+		}
 	}
 	
 	private void showSQLException(SQLException e) {
 		String message = e.getErrorCode() + "\n" + e.getMessage() + "\n" + e.getLocalizedMessage() + "\n" + e.getCause();
-		JOptionPane.showMessageDialog(null, message);
+		
+		// Check if running in headless mode (CI/testing environment)
+		if (System.getProperty("java.awt.headless", "false").equals("true") || 
+			System.getProperty("TEST_MODE", "false").equals("true")) {
+			System.err.println("SQLException: " + message);
+		} else {
+			JOptionPane.showMessageDialog(null, message);
+		}
 	}
 	
 }
