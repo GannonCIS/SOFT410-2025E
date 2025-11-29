@@ -100,15 +100,26 @@ pipeline {
       steps {
         script {
           echo "=== Archiving Artifacts ==="
-          def jarFiles = findFiles(glob: 'build/libs/*.jar')
-          if (jarFiles.length > 0) {
-            echo "Found ${jarFiles.length} JAR file(s) to archive:"
-            jarFiles.each { echo "  - ${it.name}" }
-            archiveArtifacts artifacts: 'build/libs/*.jar', fingerprint: true, allowEmptyArchive: true
-            echo "✅ Artifacts archived successfully"
+          if (isUnix()) {
+            def jarCheck = sh(script: 'ls build/libs/*.jar 2>/dev/null | wc -l', returnStdout: true).trim()
+            if (jarCheck != '0') {
+              sh 'echo "Found JAR file(s) to archive:"; ls -la build/libs/*.jar'
+              archiveArtifacts artifacts: 'build/libs/*.jar', fingerprint: true, allowEmptyArchive: true
+              echo "✅ Artifacts archived successfully"
+            } else {
+              echo "⚠️  WARNING: No JAR files found in build/libs/ - check Build & Test stage"
+              currentBuild.result = 'UNSTABLE'
+            }
           } else {
-            echo "⚠️  WARNING: No JAR files found in build/libs/ - check Build & Test stage"
-            currentBuild.result = 'UNSTABLE'
+            def jarCheck = bat(script: '@echo off & (dir build\\libs\\*.jar >nul 2>&1 && echo 1 || echo 0)', returnStdout: true).trim()
+            if (jarCheck == '1') {
+              bat 'echo Found JAR file(s) to archive: & dir build\\libs\\*.jar'
+              archiveArtifacts artifacts: 'build/libs/*.jar', fingerprint: true, allowEmptyArchive: true
+              echo "✅ Artifacts archived successfully"
+            } else {
+              echo "⚠️  WARNING: No JAR files found in build/libs/ - check Build & Test stage"
+              currentBuild.result = 'UNSTABLE'
+            }
           }
         }
       }
@@ -118,21 +129,52 @@ pipeline {
       steps {
         script {
           echo "=== Publishing HTML Test Report ==="
-          if (fileExists('build/reports/tests/test/index.html')) {
-            echo "Test report found, publishing..."
-            publishHTML([
-              reportDir: 'build/reports/tests/test',
-              reportFiles: 'index.html',
-              reportName: 'Unit Test Report',
-              keepAll: true,
-              alwaysLinkToLastBuild: true,
-              allowMissing: true
-            ])
-            echo "✅ HTML Report published successfully"
+          if (isUnix()) {
+            def reportExists = sh(script: 'test -f build/reports/tests/test/index.html && echo "true" || echo "false"', returnStdout: true).trim()
+            if (reportExists == 'true') {
+              echo "Test report found, archiving HTML report..."
+              archiveArtifacts artifacts: 'build/reports/tests/test/**', fingerprint: false, allowEmptyArchive: true
+              // Try to publish HTML if plugin is available, otherwise just archive
+              try {
+                publishHTML([
+                  reportDir: 'build/reports/tests/test',
+                  reportFiles: 'index.html',
+                  reportName: 'Unit Test Report',
+                  keepAll: true,
+                  alwaysLinkToLastBuild: true,
+                  allowMissing: true
+                ])
+                echo "✅ HTML Report published successfully"
+              } catch (Exception e) {
+                echo "⚠️  HTML publishing plugin not available, reports archived instead"
+              }
+            } else {
+              echo "⚠️  WARNING: Test report not found at build/reports/tests/test/index.html"
+              echo "This usually means tests did not run or failed to generate reports"
+            }
           } else {
-            echo "⚠️  WARNING: Test report not found at build/reports/tests/test/index.html"
-            echo "This usually means tests did not run or failed to generate reports"
-            currentBuild.result = 'UNSTABLE'
+            def reportExists = bat(script: '@echo off & (if exist "build\\reports\\tests\\test\\index.html" (echo true) else (echo false))', returnStdout: true).trim()
+            if (reportExists == 'true') {
+              echo "Test report found, archiving HTML report..."
+              archiveArtifacts artifacts: 'build/reports/tests/test/**', fingerprint: false, allowEmptyArchive: true
+              // Try to publish HTML if plugin is available, otherwise just archive
+              try {
+                publishHTML([
+                  reportDir: 'build/reports/tests/test',
+                  reportFiles: 'index.html',
+                  reportName: 'Unit Test Report',
+                  keepAll: true,
+                  alwaysLinkToLastBuild: true,
+                  allowMissing: true
+                ])
+                echo "✅ HTML Report published successfully"
+              } catch (Exception e) {
+                echo "⚠️  HTML publishing plugin not available, reports archived instead"
+              }
+            } else {
+              echo "⚠️  WARNING: Test report not found at build/reports/tests/test/index.html"
+              echo "This usually means tests did not run or failed to generate reports"
+            }
           }
         }
       }
