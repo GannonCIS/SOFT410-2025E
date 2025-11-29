@@ -7,7 +7,7 @@ public class Main {
 	
 	public static void main(String[] args) {
 		
-		Locale.setDefault(Locale.of("tr", "TR"));
+		Locale.setDefault(new Locale("tr", "TR"));
 		
 		EventQueue.invokeLater(new Runnable() {
 			
